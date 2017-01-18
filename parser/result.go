@@ -10,8 +10,8 @@ type ResElem struct {
 }
 
 type ResApi struct {
-	Api      string `json:"api"`
-	ResElems []ResElem
+	Api      string    `json:"api"`
+	ResElems []ResElem `json:"static"`
 }
 
 type ResStatic struct {
