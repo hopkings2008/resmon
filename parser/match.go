@@ -40,7 +40,22 @@ func (p *Parser) Static(fileName string) error {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		//process the log file.
-		log.Debugf("%s", scanner.Text())
+		line := scanner.Text()
+		elems := p.Match(line)
+		if len(elems) < 10 {
+			log.Debugf("skip %s", line)
+			continue
+		}
+		for k, v := range p.regElems {
+			if v.MatchString(elems[8]) {
+				calcs, _ := p.matches[k]
+				count, ok := calcs[elems[1]]
+				if ok {
+					calcs[elems[1]] = count + 1
+					break
+				}
+			}
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Errorf("failed to read %s, err: %v", fileName, err)
