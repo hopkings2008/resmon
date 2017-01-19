@@ -12,7 +12,7 @@ import (
 
 var files []string
 
-var regMatch = regexp.MustCompile("squid\\.log_res")
+var regMatch = regexp.MustCompile("_result.json")
 
 func visit(path string, f os.FileInfo, err error) error {
 	if f.IsDir() {
@@ -34,13 +34,13 @@ func main() {
 		return
 	}
 	p, _ := parser.CreateParser("(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S).*", 0, "v1/image/get")
-	err := p.ParseFiles(files...)
+	err := p.Import(files...)
 	if err != nil {
 		fmt.Printf("failed to parse files, err: %v\n", err)
 		return
 	}
 
-	err = p.Save("./result.json")
+	err = p.Save("./final_result.json")
 	if err != nil {
 		fmt.Printf("failed to save result, err: %v\n", err)
 		return

@@ -20,8 +20,10 @@ type Parser struct {
 
 	reg *regexp.Regexp
 
+	// match regexp, api / regexp
 	regElems map[string]*regexp.Regexp
 
+	// matches, api: date / count
 	matches map[string]map[string]int64
 }
 
@@ -30,7 +32,63 @@ func (p *Parser) Match(str string) []string {
 	return a
 }
 
-func (p *Parser) Static(fileName string) error {
+func (p *Parser) ParseFiles(fileName ...string) error {
+	for _, name := range fileName {
+		err := p.Statistic(name)
+		if err != nil {
+			log.Errorf("failed to statistic %s, err: %v", name, err)
+			continue
+		}
+	}
+	return nil
+}
+
+func (p *Parser) Save(filename string) error {
+	resStatistic := &ResStatic{}
+
+	for k, v := range p.matches {
+		api := ResApi{
+			Api: k,
+		}
+
+		for kk, vv := range v {
+			elem := ResElem{
+				Date:  kk,
+				Count: vv,
+			}
+			api.ResElems = append(api.ResElems, elem)
+		}
+		resStatistic.ResApis = append(resStatistic.ResApis, api)
+	}
+
+	err := resStatistic.Save(filename)
+	return err
+}
+
+func (p *Parser) Import(files ...string) error {
+	for _, file := range files {
+		rs := &ResStatic{}
+		err := rs.Import(file)
+		if err != nil {
+			log.Errorf("failed to import %s, err: %v", file, err)
+			return err
+		}
+		for _, api := range rs.ResApis {
+			s, _ := p.matches[api.Api]
+			for _, e := range api.ResElems {
+				count, ok := s[e.Date]
+				if ok {
+					s[e.Date] = count + e.Count
+					break
+				}
+				s[e.Date] = e.Count
+			}
+		}
+	}
+	return nil
+}
+
+func (p *Parser) Statistic(fileName string) error {
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Errorf("failed to open %s, err: %v", fileName, err)
@@ -47,13 +105,16 @@ func (p *Parser) Static(fileName string) error {
 			continue
 		}
 		for k, v := range p.regElems {
-			if v.MatchString(elems[8]) {
+			apiName := elems[8]
+			if v.MatchString(apiName) {
 				calcs, _ := p.matches[k]
-				count, ok := calcs[elems[1]]
+				date := elems[1]
+				count, ok := calcs[date]
 				if ok {
-					calcs[elems[1]] = count + 1
+					calcs[date] = count + 1
 					break
 				}
+				calcs[date] = 1
 			}
 		}
 	}
